@@ -1,0 +1,42 @@
+name: Cloud Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up environment
+        run: |
+          echo "Build started at $(date)"
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Repository: ${{ github.repository }}"
+
+      - name: Build
+        run: |
+          echo "Building project..."
+          mkdir -p output
+          echo "Build completed at $(date)" > output/build-info.txt
+          ls -la
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: output/
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ${{ runner.os }}-cache-${{ hashFiles('**/*.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cache-

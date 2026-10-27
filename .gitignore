@@ -1,0 +1,13 @@
+*.exe
+*.dll
+*.obj
+*.o
+*.a
+*.so
+*.dylib
+build/
+dist/
+node_modules/
+__pycache__/
+.env
+*.log
