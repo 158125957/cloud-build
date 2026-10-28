@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # 创建 Release 需要
 
 env:
   DOTNET_NOLOGO: "true"
@@ -88,8 +88,34 @@ jobs:
             Write-Host "公开直链上传失败，产物只在 artifact 里"
           }
 
+      - name: 发布 Release（公开直链）
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-build.${{ github.run_number }}
+          name: 音乐桌面 v0.1.0 build.${{ github.run_number }}
+          body: |
+            自动构建于 ${{ github.sha }}
+            - 产物：MusicDesktop-win-x64.zip（自包含单文件，解压即用）
+            - 运行环境：Windows 10 1809+ / Windows 11 x64
+          files: music-desktop/MusicDesktop-win-x64.zip
+          draft: false
+          prerelease: true
+
       - name: 结果汇总
+        shell: pwsh
         run: |
-          Write-Host "## 音乐桌面 构建完成" -ForegroundColor Green
-          Write-Host ("产物：MusicDesktop-win-x64.zip  {0:N1} MB" -f ((Get-Item MusicDesktop-win-x64.zip).Length / 1MB))
-          Write-Host "直链：${{ steps.mirror.outputs.url }}"
+          $size = (Get-Item MusicDesktop-win-x64.zip).Length
+          $hash = (Get-FileHash MusicDesktop-win-x64.zip -Algorithm SHA256).Hash
+          $rel  = "${{ steps.release.outputs.url }}"
+          $mir  = "${{ steps.mirror.outputs.url }}"
+          @(
+            "## 音乐桌面 构建完成",
+            "",
+            ("- 产物：MusicDesktop-win-x64.zip  **{0:N1} MB**" -f ($size / 1MB)),
+            ("- SHA256：``$hash``"),
+            ("- 发布页：$rel"),
+            ("- 镜像直链：$mir"),
+            ("- 提交：``${{ github.sha }}``")
+          ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          Write-Host "RELEASE=$rel MIRROR=$mir"
