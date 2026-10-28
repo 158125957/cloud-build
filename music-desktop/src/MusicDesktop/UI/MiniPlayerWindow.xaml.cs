@@ -45,6 +45,7 @@ public partial class MiniPlayerWindow : Window
         ArtistText.Text = string.IsNullOrWhiteSpace(_player.Artist) ? "—" : _player.Artist;
         SourceText.Text = _player.Mode switch
         {
+            SourceMode.Demo => "DEMO",
             SourceMode.Folia => "FOLIA",
             SourceMode.Smtc => "SMTC",
             _ => "OFFLINE",

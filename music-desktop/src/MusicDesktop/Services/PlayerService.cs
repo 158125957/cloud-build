@@ -8,7 +8,7 @@ using MusicDesktop.Media;
 
 namespace MusicDesktop.Services;
 
-public enum SourceMode { Offline, Smtc, Folia }
+public enum SourceMode { Offline, Demo, Smtc, Folia }
 
 public sealed partial class PlayerService
 {
@@ -279,6 +279,12 @@ public sealed partial class PlayerService
         _pos = positionMs;
         _posAnchor = DateTime.UtcNow;
         Updated?.Invoke();
+
+        if (_demo)
+        {
+            _demoStart = DateTime.UtcNow.AddMilliseconds(-positionMs);
+            return;
+        }
 
         if (Mode == SourceMode.Folia && HasStageToken &&
             await _stage.ControlAsync(_settings.StagePort, _settings.StageToken, "seek", positionMs))

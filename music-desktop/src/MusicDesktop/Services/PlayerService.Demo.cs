@@ -10,7 +10,7 @@ public sealed partial class PlayerService
     private void UpdateDemo()
     {
         if (_demoStart == DateTime.MinValue) _demoStart = DateTime.UtcNow;
-        Mode = SourceMode.Folia;
+        Mode = SourceMode.Demo;
         Title = "夜色落在窗台（演示）";
         Artist = "音乐桌面 DEMO";
         Album = "本地演示数据";
