@@ -1,13 +1,14 @@
 # cloud-build
 
-GitHub Actions 云编译工作区。
+GitHub Actions 云编译工作区。本仓库同时是「音乐桌面」的线上编译入口。
 
-## 功能
+## music-desktop（音乐桌面）
 
-- 自动编译 / 构建
-- 多平台交叉编译
-- 自动发布 Release
+Windows 桌面音乐层：置顶逐字歌词 + 迷你播放器 + Dock，接 Folia 本地接口与系统 SMTC。
 
-## 使用
+- 源码：`music-desktop/`
+- 流水线：`.github/workflows/build.yml`（windows-latest / .NET 9）
+- 产物：`MusicDesktop-win-x64.zip`（自包含单文件，另附公开直链）
+- 触发：push 到 `main` 或手动 `workflow_dispatch`
 
-push 代码到 main 分支即可触发 Actions workflow。
+本地编译见 `music-desktop/build.ps1`。

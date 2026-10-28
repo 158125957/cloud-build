@@ -1,0 +1,158 @@
+<Window x:Class="MusicDesktop.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="音乐桌面 · 设置" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Width="620" Height="720" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True" SnapsToDevicePixels="True" MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Border CornerRadius="20" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardBorder}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.55" Color="#000000" />
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="24,18,16,8">
+                <StackPanel>
+                    <TextBlock Text="音乐桌面" FontFamily="Microsoft YaHei UI, Segoe UI" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Text="Folia 歌词接口 + Windows 媒体会话" FontSize="11.5" Margin="0,3,0,0"
+                               Foreground="{DynamicResource TextMuted}" />
+                </StackPanel>
+                <Button Style="{StaticResource IconButton}" Content="&#xE711;" HorizontalAlignment="Right"
+                        VerticalAlignment="Top" Click="BtnClose_Click" />
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" Margin="24,0,18,0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,6,10">
+
+                    <TextBlock Text="FOLIA 连接" Style="{StaticResource SectionTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="歌词接口端口" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4" />
+                            <TextBox x:Name="TxtLyricPort" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Stage 接口端口" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4" />
+                            <TextBox x:Name="TxtStagePort" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Stage Token（Folia → 设置 → Stage 模式里复制；留空则只读歌词）"
+                               FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,10,0,4" />
+                    <TextBox x:Name="TxtToken" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Style="{StaticResource GhostButton}" Content="测试连接" Click="BtnTest_Click"
+                                Background="#1FFFFFFF" Padding="14,7" />
+                        <TextBlock x:Name="TxtTest" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="11.5"
+                                   Foreground="{DynamicResource TextMuted}" />
+                    </StackPanel>
+
+                    <TextBlock Text="外观" Style="{StaticResource SectionTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="主题" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4" />
+                            <ComboBox x:Name="CmbTheme" SelectionChanged="CmbTheme_SelectionChanged" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="歌调字号" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="SldFont" Minimum="20" Maximum="96" TickFrequency="2" IsSnapToTickEnabled="True"
+                                        VerticalAlignment="Center" ValueChanged="SldFont_ValueChanged" />
+                                <TextBlock x:Name="TxtFont" Grid.Column="1" Width="34" TextAlignment="Right" FontSize="11.5"
+                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="歌词透明度" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,10,0,2" />
+                    <Slider x:Name="SldOpacity" Minimum="0.25" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                            ValueChanged="SldOpacity_ValueChanged" />
+
+                    <TextBlock Text="歌词延迟补偿（毫秒，正数=歌词延后）" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,2" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="60" />
+                        </Grid.ColumnDefinitions>
+                        <Slider x:Name="SldOffset" Minimum="-3000" Maximum="3000" TickFrequency="50" IsSnapToTickEnabled="True"
+                                ValueChanged="SldOffset_ValueChanged" />
+                        <TextBox x:Name="TxtOffset" Grid.Column="1" Margin="8,0,0,0" TextAlignment="Center" />
+                    </Grid>
+
+                    <CheckBox x:Name="ChkTranslation" Content="显示翻译" />
+                    <CheckBox x:Name="ChkRomanization" Content="显示罗马音" />
+                    <CheckBox x:Name="ChkTopmost" Content="窗口置顶" />
+                    <CheckBox x:Name="ChkLock" Content="锁定歌词（鼠标穿透，不能拖动）" />
+
+                    <TextBlock Text="窗口与启动" Style="{StaticResource SectionTitle}" />
+                    <CheckBox x:Name="ChkDock" Content="显示底部 Dock" />
+                    <CheckBox x:Name="ChkMini" Content="显示迷你播放器" />
+                    <CheckBox x:Name="ChkAutoStart" Content="开机自动启动" />
+                    <CheckBox x:Name="ChkHideIdle" Content="无播放时自动隐藏歌词" />
+
+                    <TextBlock Text="DOCK 快捷方式" Style="{StaticResource SectionTitle}" />
+                    <Border Background="#14FFFFFF" CornerRadius="10" BorderBrush="#1AFFFFFF" BorderThickness="1" Padding="4">
+                        <StackPanel>
+                            <ListBox x:Name="LstDock" Height="120" Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource TextPrimary}" />
+                            <StackPanel Orientation="Horizontal" Margin="6,2,6,6">
+                                <Button Style="{StaticResource GhostButton}" Content="添加程序…" Click="BtnAddDock_Click"
+                                        Background="#1FFFFFFF" Padding="12,6" />
+                                <Button Style="{StaticResource GhostButton}" Content="移除所选" Click="BtnRemoveDock_Click"
+                                        Padding="12,6" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="快捷键：Ctrl+Alt+L 歌词显隐 · Ctrl+Alt+K 锁定 · Ctrl+Alt+M 播放器 · Ctrl+Alt+D Dock"
+                               FontSize="10.5" Foreground="{DynamicResource TextMuted}" Margin="2,14,0,0" TextWrapping="Wrap" />
+                    <TextBlock x:Name="TxtConfigPath" FontSize="10" Foreground="{DynamicResource TextMuted}"
+                               Margin="2,4,0,10" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <Grid Grid.Row="2" Margin="24,10,18,18">
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource GhostButton}" Content="打开配置目录" Click="BtnOpenConfig_Click" Padding="12,7" />
+                    <Button Style="{StaticResource GhostButton}" Content="重启歌词层" Click="BtnRestartLyric_Click" Padding="12,7" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource GhostButton}" Content="取消" Click="BtnClose_Click" Padding="16,7" />
+                    <Button Content="保存" Click="BtnSave_Click" Margin="8,0,0,0" Padding="22,7"
+                            Background="{DynamicResource AccentBrush}" Foreground="#FF0B0E14" FontWeight="SemiBold"
+                            BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="9"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

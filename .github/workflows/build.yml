@@ -1,42 +1,95 @@
-name: Cloud Build
+name: 音乐桌面 · 线上编译
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main ]
+    paths:
+      - 'music-desktop/**'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  windows-build:
+    name: Windows x64 编译 + 打包
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: music-desktop
+
     steps:
-      - name: Checkout
+      - name: 取源码
         uses: actions/checkout@v4
 
-      - name: Set up environment
-        run: |
-          echo "Build started at $(date)"
-          echo "Runner OS: ${{ runner.os }}"
-          echo "Repository: ${{ github.repository }}"
+      - name: 装 .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
-      - name: Build
+      - name: 环境信息
         run: |
-          echo "Building project..."
-          mkdir -p output
-          echo "Build completed at $(date)" > output/build-info.txt
-          ls -la
+          dotnet --info
+          Write-Host "runner=${{ runner.os }}-${{ runner.arch }}"
 
-      - name: Upload artifacts
+      - name: 还原
+        run: dotnet restore src/MusicDesktop/MusicDesktop.csproj
+
+      - name: 编译
+        run: dotnet build src/MusicDesktop/MusicDesktop.csproj -c Release --no-restore
+
+      - name: 发布（自包含单文件）
+        run: >
+          dotnet publish src/MusicDesktop/MusicDesktop.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o publish/win-x64
+
+      - name: 打包
+        run: |
+          Compress-Archive -Path publish/win-x64/* -DestinationPath MusicDesktop-win-x64.zip -Force
+          Get-Item MusicDesktop-win-x64.zip | Select-Object Name, Length
+          Get-FileHash MusicDesktop-win-x64.zip -Algorithm SHA256
+
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: output/
+          name: MusicDesktop-win-x64
+          path: music-desktop/MusicDesktop-win-x64.zip
+          if-no-files-found: error
 
-      - name: Cache
-        uses: actions/cache@v4
-        with:
-          path: .cache
-          key: ${{ runner.os }}-cache-${{ hashFiles('**/*.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cache-
+      - name: 传到公开直链
+        id: mirror
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $zip = "MusicDesktop-win-x64.zip"
+          $size = (Get-Item $zip).Length
+          Write-Host ("size={0:N1} MB" -f ($size / 1MB))
+          $url = ""
+          try {
+            $url = curl.exe -sS -m 300 -F "reqtype=fileupload" -F "fileToUpload=@$zip" https://catbox.moe/user/api.php
+          } catch { Write-Host "catbox 失败: $_" }
+          if (-not $url -or $url -notmatch '^https?://') {
+            try { $url = curl.exe -sS -m 300 -F "file=@$zip" https://0x0.st } catch { Write-Host "0x0 失败: $_" }
+          }
+          if ($url -match '^https?://') {
+            Write-Host ("PUBLIC_URL=" + $url.Trim())
+            "url=$($url.Trim())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            Write-Host "公开直链上传失败，产物只在 artifact 里"
+          }
+
+      - name: 结果汇总
+        run: |
+          Write-Host "## 音乐桌面 构建完成" -ForegroundColor Green
+          Write-Host ("产物：MusicDesktop-win-x64.zip  {0:N1} MB" -f ((Get-Item MusicDesktop-win-x64.zip).Length / 1MB))
+          Write-Host "直链：${{ steps.mirror.outputs.url }}"
