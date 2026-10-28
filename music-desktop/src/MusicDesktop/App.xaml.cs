@@ -69,7 +69,7 @@ public partial class App : Application
     private void RegisterHotkeys()
     {
         _hotkeys = new HotkeyService();
-        _hotkeys.Register(1, 0x4C, ToggleLyric);      // Ctrl+Alt+L
+        _hotkeys.Register(1, HotkeyService.LyricCandidates, ToggleLyric);  // 歌词显隐（多组合兜底）
         _hotkeys.Register(2, 0x4B, ToggleLock);       // Ctrl+Alt+K
         _hotkeys.Register(3, 0x4D, ToggleMini);       // Ctrl+Alt+M
         _hotkeys.Register(4, 0x44, ToggleDock);       // Ctrl+Alt+D

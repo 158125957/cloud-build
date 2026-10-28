@@ -25,6 +25,10 @@ public sealed partial class PlayerService
     private bool _playing;
     private DateTime _lastStagePoll = DateTime.MinValue;
     private DateTime _lastSmtcPoll = DateTime.MinValue;
+    private StageSnapshot? _stageCache;
+    private DateTime _stageCacheAt = DateTime.MinValue;
+    private SmtcSnapshot? _smtcCache;
+    private DateTime _smtcCacheAt = DateTime.MinValue;
     private DateTime _lastLyricFetch = DateTime.MinValue;
     private string _trackKey = "";
     private string _coverKey = "";
@@ -98,35 +102,48 @@ public sealed partial class PlayerService
     private async Task PollAsync()
     {
         var now = DateTime.UtcNow;
-        StageSnapshot? stage = null;
-        var stageOk = false;
+        var stageFresh = false;
 
+        // Stage：按 900ms 节流拉取，结果缓存；未拉取的 tick 沿用缓存，避免状态在 5Hz 上抖回 OFFLINE
         if (HasStageToken && (now - _lastStagePoll).TotalMilliseconds >= 900)
         {
             _lastStagePoll = now;
             var res = await _stage.GetStatusAsync(_settings.StagePort, _settings.StageToken);
-            stageOk = res.ok;
-            stage = res.snapshot;
-            if (!stageOk && res.error != null) StatusDetail = res.error;
+            if (res.ok)
+            {
+                _stageCache = res.snapshot;
+                _stageCacheAt = now;
+                stageFresh = true;
+            }
+            else if ((now - _stageCacheAt).TotalSeconds > 3)
+            {
+                _stageCache = null;
+                if (res.error != null) StatusDetail = res.error;
+            }
         }
+        var stage = _stageCache;
+        var stageOk = stage != null;
 
-        SmtcSnapshot? smtc = null;
-        if ((!stageOk || stage?.Current == null) && (now - _lastSmtcPoll).TotalMilliseconds >= 1000)
+        // SMTC：仅在 Stage 无曲目时读；同样缓存
+        if (stage?.Current == null && (now - _lastSmtcPoll).TotalMilliseconds >= 1000)
         {
             _lastSmtcPoll = now;
-            smtc = await _smtc.ReadAsync();
+            var snap = await _smtc.ReadAsync();
+            if (snap != null) { _smtcCache = snap; _smtcCacheAt = now; }
         }
+        var smtc = (now - _smtcCacheAt).TotalSeconds <= 6 ? _smtcCache : null;
 
-        if (stageOk && stage?.Current != null)
+        if (stageOk && stage!.Current != null)
         {
             Mode = SourceMode.Folia;
+            var stageDur = stage.DurationMs > 0 ? stage.DurationMs : stage.Current.DurationMs;
             ApplyTrack(stage.Current.Title, stage.Current.Artist, stage.Current.Album,
-                       stage.DurationMs, stage.Current.CoverUrl, null);
+                       stageDur, stage.Current.CoverUrl, null);
             _playing = stage.PlayerState == "PLAYING";
             CanSeek = stage.CanSeek;
             StatusDetail = "Stage 已连接";
 
-            if (now.Millisecond < 220 || Math.Abs(stage.PositionMs - _pos) > 900)
+            if (stageFresh || Math.Abs(stage.PositionMs - _pos) > 1500)
             {
                 _pos = stage.PositionMs;
                 _posAnchor = now;
@@ -148,7 +165,7 @@ public sealed partial class PlayerService
         else
         {
             Mode = SourceMode.Offline;
-            StatusDetail = stageOk ? "Folia 空闲" : (_smtc.LastError ?? "未发现媒体会话");
+            StatusDetail = HasStageToken && stageOk ? "Folia 空闲" : (_smtc.LastError ?? "未发现媒体会话");
             _playing = false;
             CanSeek = false;
             if (Lyric == null && Title.Length == 0)
